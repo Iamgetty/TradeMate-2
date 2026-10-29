@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from 'react';
 
 type Listing = { id:string; title:string; description:string|null; listing_type:'product'|'service'; price_minor_units:string|null; currency_code:string; country_code:string; seller_name:string; category_name:string|null; cover_image:string|null };
 type ListingResponse = { data:Listing[]; pagination:{page:number;limit:number;total:number;totalPages:number}; message?:string };
-const API_BASE = ''.replace(/\/$/,'');
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').replace(/\/$/,'');
 const money=(minor:string|null,currency:string)=>{if(minor===null)return 'Price on request';const n=Number(minor)/100;try{return new Intl.NumberFormat('en',{style:'currency',currency,maximumFractionDigits:2}).format(n)}catch{return `${currency} ${n.toLocaleString()}`}};
 const visualImages=[
  'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=85',
@@ -17,7 +17,7 @@ export default function Home(){
  const [items,setItems]=useState<Listing[]>([]),[total,setTotal]=useState(0),[query,setQuery]=useState(''),[search,setSearch]=useState(''),[country,setCountry]=useState('all'),[kind,setKind]=useState('all'),[page,setPage]=useState(1),[loading,setLoading]=useState(true),[error,setError]=useState(''),[refreshKey,setRefreshKey]=useState(0),[signedIn,setSignedIn]=useState<boolean|null>(null);
  const load=useCallback(async()=>{setLoading(true);setError('');const p=new URLSearchParams({page:String(page),limit:'12'});if(search.trim())p.set('q',search.trim());if(country!=='all')p.set('country',country);if(kind!=='all')p.set('type',kind);try{const r=await fetch(`${API_BASE}/api/market/listings?${p}`,{cache:'no-store'});if(!r.ok)throw new Error(`Marketplace request failed (${r.status}). Try again.`);const d=await r.json() as ListingResponse;setItems(Array.isArray(d.data)?d.data:[]);setTotal(d.pagination?.total??0)}catch(e){setError(e instanceof Error?e.message:'Could not connect to the market. Check your connection.')}finally{setLoading(false)}},[page,search,country,kind,refreshKey]);
  useEffect(()=>{void load()},[load]);
- useEffect(()=>{let cancelled=false;fetch('/api/auth/me',{credentials:'include',cache:'no-store'}).then(r=>{if(!cancelled)setSignedIn(r.ok)}).catch(()=>{if(!cancelled)setSignedIn(false)});return()=>{cancelled=true}},[]);
+ useEffect(()=>{let cancelled=false;fetch(`${API_BASE}/api/auth/me`,{credentials:'include',cache:'no-store'}).then(r=>{if(!cancelled)setSignedIn(r.ok)}).catch(()=>{if(!cancelled)setSignedIn(false)});return()=>{cancelled=true}},[]);
  useEffect(()=>{
   const canvas=document.querySelector<HTMLCanvasElement>('.tm-network-canvas');
   const hero=document.querySelector<HTMLElement>('.tm-world-hero');
@@ -37,7 +37,7 @@ export default function Home(){
   <header className="tm-world-nav">
    <a className="tm-world-brand" href="#top" aria-label="TradeMate home"><span className="tm-world-mark"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M9 12h22M20 12v18M12 20h16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/><path d="m23 6 7 6-7 6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span><span>trade<span>mate</span><small>THE OPEN MARKET</small></span></a>
    <nav aria-label="Main navigation"><a className="is-active" href="#market">Explore</a><a href="#categories">Categories</a><a href="#how">How it works</a></nav>
-   <div className="tm-world-nav-actions"><a className="tm-world-login" href="/app">Open app</a><span className="tm-network"><i/> NETWORK LIVE</span>{signedIn===null?<span className="tm-world-auth-placeholder" aria-hidden="true"/>:signedIn?<a className="tm-world-login" href="/terminal">My space ↗</a>:<><a className="tm-world-login" href="/auth?mode=login">Log in</a><a className="tm-world-join" href="/auth?mode=register">Join TradeMate <span>↗</span></a></>}</div>
+   <div className="tm-world-nav-actions"><a className="tm-world-login" href="/terminal">Open app</a><span className="tm-network"><i/> NETWORK LIVE</span>{signedIn===null?<span className="tm-world-auth-placeholder" aria-hidden="true"/>:signedIn?<a className="tm-world-login" href="/terminal">My space ↗</a>:<><a className="tm-world-login" href="/auth?mode=login">Log in</a><a className="tm-world-join" href="/auth?mode=register">Join TradeMate <span>↗</span></a></>}</div>
   </header>
   <div className="tm-world-ribbon"><span><i/> OPEN MARKET PROTOCOL</span><span>GOODS <b>·</b> SERVICES <b>·</b> OPPORTUNITY</span><span className="tm-ribbon-right">BUILT FOR THE NEXT ECONOMY <b>↗</b></span></div>
   <section className="tm-world-hero"><canvas className="tm-network-canvas" aria-hidden="true"/>
