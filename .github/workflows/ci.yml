@@ -1,0 +1,62 @@
+name: TradeMate CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "TradeMate-main/apps/**"
+      - "TradeMate-main/.**"
+      - "TradeMate-main/render.yaml"
+      - ".github/workflows/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "TradeMate-main/apps/**"
+      - "TradeMate-main/.**"
+      - "TradeMate-main/render.yaml"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trademate-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-build:
+    name: API install and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: TradeMate-main/apps/api
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm install --include=dev
+      - name: Build API
+        run: npm run build
+
+  web-build:
+    name: Web install and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: TradeMate-main/apps/web
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm install
+      - name: Build web
+        run: npm run build
